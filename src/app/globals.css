@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+/* ════════════════════════════════════════════════════════════════
+   DESIGNTOKENS – färger och typsnitt från designskisserna.
+   Ändra här så slår det igenom överallt.
+   Tailwind skapar automatiskt klasser: bg-surface, text-muted osv.
+   ════════════════════════════════════════════════════════════════ */
+@theme {
+  /* Bakgrunder (mörkast → ljusast) */
+  --color-canvas: #1b1b1b;          /* prickig arbetsyta */
+  --color-surface: #121212;         /* paneler (toppbar, inspector) */
+  --color-raised: #1c1c1c;          /* fält och knappar i paneler */
+  --color-card: #2b2b2b;            /* målkort */
+  --color-card-inner: #3a3a3a;      /* widgetruta i kort */
+
+  /* Linjer */
+  --color-line: #2a2a2a;
+  --color-line-strong: #3a3a3a;
+
+  /* Text */
+  --color-fg: #f5f5f5;
+  --color-muted: #9a9a9a;
+  --color-faint: #5c5c5c;
+
+  /* Accentfärger */
+  --color-brand: #4f7cff;           /* blå (kantlinjer, valda saker) */
+  --color-brand-2: #6a4ff7;         /* lila (gradientens slut) */
+  --color-highlight: #e8f400;       /* gul ("Goals", "Wins") */
+  --color-success: #3ecf8e;
+  --color-warning: #f5a524;
+  --color-danger: #ef4444;
+
+  /* Typsnitt (laddas i app/layout.tsx) */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-roboto-mono), ui-monospace, monospace;
+}
+
+/* Värden som används via var(...) i klasser. De ligger utanför @theme,
+   eftersom Tailwind bara skriver ut theme-variabler som används av egna klasser. */
+:root {
+  --radius-panel: 22px;
+}
+
+/* ── Grund ─────────────────────────────────────────────────────── */
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Prickmönstret som syns på alla sidor */
+.dot-grid {
+  background-color: var(--color-canvas);
+  background-image: radial-gradient(#3a3a3a 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Blå→lila gradient för primärknappar och START-noden */
+.brand-gradient {
+  background-image: linear-gradient(90deg, var(--color-brand) 0%, var(--color-brand-2) 100%);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* ── React Flow (canvas-biblioteket) – anpassat till designen ──
+   Grundstilen importeras i components/canvas/CanvasBoard.tsx      */
+.react-flow .react-flow__edge-path {
+  stroke: var(--color-brand);
+  stroke-width: 2.5;
+  transition: stroke 120ms ease, stroke-width 120ms ease;
+}
+
+/* ── Pilar i editorn: hover, vald pil och dragbara ändar ─────────── */
+.canvas-editable .react-flow__edge {
+  cursor: pointer;
+}
+
+.canvas-editable .react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3.5;
+}
+
+.canvas-editable .react-flow__edge.selected .react-flow__edge-path {
+  stroke: #a9c2ff;
+  stroke-width: 3.5;
+}
+
+/* Ändarna på en vald pil syns som prickar – dra dem till en annan nod */
+.canvas-editable .react-flow__edge.selected .react-flow__edgeupdater {
+  fill: var(--color-fg);
+  stroke: var(--color-brand);
+  stroke-width: 2;
+  cursor: move;
+}
+
+/* ── Nodhandtag (components/canvas/nodes/NodeHandles.tsx) ──────────
+   Själva handtaget är en osynlig punkt mitt på nodens kant – där fäster
+   pilarna. Pricken man ser och klickar på ligger en bit utanför.        */
+.react-flow .node-handle {
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* Hur långt utanför kanten pricken ligger, per sida */
+.node-handle--top    { --dot-x: 0;     --dot-y: -18px; }
+.node-handle--bottom { --dot-x: 0;     --dot-y: 18px; }
+.node-handle--left   { --dot-x: -18px; --dot-y: 0; }
+.node-handle--right  { --dot-x: 18px;  --dot-y: 0; }
+
+.node-handle__dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 2px solid var(--color-brand);
+  background: var(--color-fg);
+  color: var(--color-canvas);
+  cursor: crosshair;
+  transform: translate(-50%, -50%) translate(var(--dot-x), var(--dot-y));
+  /* Dold tills noden är vald */
+  opacity: 0;
+  pointer-events: none;
+  transition: width 120ms ease, height 120ms ease, opacity 120ms ease;
+}
+
+.node-handle__dot svg {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.react-flow__node.selected .node-handle__dot {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* En pil dras mot noden: visa alla fyra handtag … */
+.node-handle--show .node-handle__dot {
+  opacity: 1;
+}
+
+/* … och lys upp det pilen kommer att fästa vid */
+.node-handle--active .node-handle__dot {
+  width: 28px;
+  height: 28px;
+  background: var(--color-brand);
+  border-color: var(--color-fg);
+  box-shadow: 0 0 0 6px rgba(79, 124, 255, 0.25);
+}
+
+/* Hover: pricken växer och visar ett plus = "klicka för att lägga till en nod" */
+.node-handle__dot:hover {
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+}
+
+.node-handle__dot:hover svg {
+  opacity: 1;
+}
+
+.react-flow__node.selected > .goal-card {
+  box-shadow: 0 0 0 2px var(--color-brand), 0 20px 50px rgba(79, 124, 255, 0.15);
+}
+
+/* Pågående mål: ljusblått sken som pulserar långsamt.
+   Ligger på ett eget lager (::after) så att markeringsramen ovan får vara kvar. */
+.goal-card--active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: goal-pulse 4s ease-in-out infinite;
+}
+
+@keyframes goal-pulse {
+  0%, 100% { box-shadow: 0 0 10px 2px rgba(125, 175, 255, 0.25); }
+  50%      { box-shadow: 0 0 26px 7px rgba(125, 175, 255, 0.55); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goal-card--active::after {
+    animation: none;
+    box-shadow: 0 0 18px 4px rgba(125, 175, 255, 0.4);
+  }
+}
+
+.react-flow__node.selected > .goal-card--done {
+  box-shadow: 0 0 0 2px var(--color-success), 0 20px 50px rgba(62, 207, 142, 0.15);
+}
+
+/* Diskret in-animation för paneler */
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in { animation: slide-in 180ms ease-out; }
